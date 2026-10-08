@@ -1,0 +1,6 @@
+Available traffic-light model variants:
+- model://traffic_light_red
+- model://traffic_light_yellow
+- model://traffic_light_green
+
+V2 deliberately does NOT claim dynamic switching yet. For final competition behavior, add a Gazebo system plugin or ROS2/Gazebo transport controller that changes the visible lamp state while keeping the same pose.
