@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<sdf version="1.10">
+  <model name="vehicle_1">
+    <static>true</static>
+    <link name="board">
+      <collision name="backing_collision">
+        <pose>0 0 0.125 0 0 0</pose>
+        <geometry><box><size>0.005 0.345 0.25</size></box></geometry>
+      </collision>
+      <visual name="backing">
+        <pose>0.0025 0 0.125 0 0 0</pose>
+        <geometry><box><size>0.005 0.345 0.25</size></box></geometry>
+        <material><ambient>0.12 0.12 0.12 1</ambient><diffuse>0.12 0.12 0.12 1</diffuse></material>
+      </visual>
+      <visual name="car_face">
+        <pose>-0.003 0 0 0 0 0</pose>
+        <geometry><mesh><uri>model://vehicle_1/meshes/car.obj</uri></mesh></geometry>
+      </visual>
+      <visual name="plate_face">
+        <pose>-0.004 0 0.105 0 0 0</pose>
+        <geometry><mesh><uri>model://vehicle_1/meshes/plate.obj</uri></mesh></geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>
