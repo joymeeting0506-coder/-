@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>smart_community_gazebo</name>
+  <version>0.4.3</version>
+  <description>2026 AIC Smart Community Gazebo Harmonic world and visual material models.</description>
+  <maintainer email="local@example.invalid">AIC Team</maintainer>
+  <license>Proprietary</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

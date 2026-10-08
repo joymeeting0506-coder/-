@@ -1,0 +1,4 @@
+AIC Smart Community Gazebo modeling handoff
+Version: 0.4.3
+Integrated revisions: v2 + v3 + v4 + v4.1 + v4.2 + v4.3
+Environment target: Ubuntu 24.04 + ROS 2 Jazzy + Gazebo Sim 8 / Harmonic

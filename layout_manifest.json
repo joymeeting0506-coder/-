@@ -1,0 +1,62 @@
+{
+  "field_m": [
+    4.2,
+    4.2
+  ],
+  "person_board_height_m_approx": 0.15,
+  "district_A": [
+    "community_person_01",
+    "community_person_02",
+    "noncommunity_person_F1",
+    "community_person_03",
+    "community_person_04"
+  ],
+  "district_B": [
+    "community_person_05",
+    "community_person_06",
+    "noncommunity_person_F2",
+    "community_person_07",
+    "community_person_08"
+  ],
+  "unused_community_library": [
+    "community_person_09",
+    "community_person_10",
+    "community_person_11",
+    "community_person_12",
+    "community_person_13",
+    "community_person_14",
+    "community_person_15",
+    "community_person_16"
+  ],
+  "traffic_light_top_default": "green",
+  "traffic_light_mid_default": "red",
+  "vehicle_plates": [
+    "鄂D·7B5Q2",
+    "苏A·PL12A",
+    "苏A·B8Q62"
+  ],
+  "note": "District class mix is a configurable training arrangement; source materials do not specify which exact person image belongs to which district.",
+  "v4_2_adjustments": {
+    "traffic_light_mid_pose": [
+      2.0,
+      1.3,
+      0.0,
+      0.0,
+      0.0,
+      -1.570796
+    ],
+    "district_B_layout": "staggered 3+2 arrangement inside B upper zone; alternating right/up board orientations",
+    "basis": "2026复赛任务示意图: B街区 five boards; orange arrows indicate up/right material orientations; second traffic light is below the middle crosswalk in the vertical patrol lane"
+  },
+  "v4_3_adjustments": {
+    "district_B_layout": "route-aware 3+2 staggered arrangement",
+    "orientation_logic": {
+      "B_person_1": "faces upper horizontal patrol lane",
+      "B_person_2": "faces upper horizontal patrol lane",
+      "B_person_3": "faces upper horizontal patrol lane",
+      "B_person_4": "faces right vertical patrol lane",
+      "B_person_5": "faces right vertical patrol lane"
+    },
+    "basis": "Official B-zone diagram shows 5 boards and orange up/right material-orientation cues; exact per-board mapping is not specified, so this layout maps those two orientations to the two adjacent robot path segments for reliable vision."
+  }
+}
