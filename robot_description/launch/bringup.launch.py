@@ -1,7 +1,13 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable,
+)
+from launch.conditions import IfCondition, UnlessCondition
+from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -14,11 +20,32 @@ def generate_launch_description():
     world = os.path.join(world_pkg, 'worlds', 'smart_community_v2.sdf')
     models = os.path.join(world_pkg, 'models')
 
-    env = SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models)
+    # VMware SVGA 虚拟 GPU（vmwgfx）只报到 OpenGL 4.3，且离屏 FBO 渲染不稳定：
+    # gpu_lidar 约 2/3 帧全 inf、相机整帧空白。强制走 Mesa llvmpipe 软渲染
+    # （llvmpipe 报 4.5，FBO 路径完整）后渲染才稳定。
+    # 代价是吃 CPU，若宿主卡顿可把这四行注掉换回硬件路径。
+    env = [
+        SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
+        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe'),
+        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5'),
+        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450'),
+    ]
+
+    headless = LaunchConfiguration('headless')
 
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(gz_pkg, 'launch', 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': '-r -v2 --render-engine ogre ' + world}.items(),
+        launch_arguments={'gz_args': '-r -v2 --render-engine ogre2 ' + world}.items(),
+        condition=UnlessCondition(headless),
+    )
+
+    # headless:=true 时用 -s（只跑服务端，不开 GUI），传感器照常出数据。
+    # 本机软渲染下 GUI 会吃掉大量 CPU，调试/跑算法时用无头模式更快。
+    gz_sim_headless = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(gz_pkg, 'launch', 'gz_sim.launch.py')),
+        launch_arguments={'gz_args': '-r -s -v2 ' + world}.items(),
+        condition=IfCondition(headless),
     )
 
     spawn_robot = IncludeLaunchDescription(
@@ -36,9 +63,10 @@ def generate_launch_description():
             'camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             'imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
             '/world/smart_community/model/patrol_bot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
-            '/model/patrol_bot/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
         ],
+        # 不桥接 gz 的 /model/patrol_bot/tf：TF 树由 robot_state_publisher（URDF 静态链）
+        # 和 frame_remap（odom->base_link）负责，gz 那套 patrol_bot::... 的位姿 TF 无人消费。
         remappings=[
             ('/model/patrol_bot/cmd_vel', '/cmd_vel'),
             ('/model/patrol_bot/odometry', '/odom'),
@@ -47,7 +75,6 @@ def generate_launch_description():
             ('camera_info', '/camera/camera_info'),
             ('imu', '/imu/data'),
             ('/world/smart_community/model/patrol_bot/joint_state', '/joint_states'),
-            ('/model/patrol_bot/tf', '/tf_raw'),
         ],
         output='screen',
     )
@@ -66,4 +93,11 @@ def generate_launch_description():
         output='screen',
     )
 
-    return LaunchDescription([env, gz_sim, spawn_robot, bridge, traffic_light, frame_remap])
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'headless',
+            default_value='false',
+            description='true 则不开 Gazebo GUI（-s 无头模式），传感器数据照常输出',
+        ),
+        *env, gz_sim, gz_sim_headless, spawn_robot, bridge, traffic_light, frame_remap,
+    ])

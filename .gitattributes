@@ -1,0 +1,7 @@
+# 运行环境是 Ubuntu 里的 ROS 2，仓库统一存 LF；
+# Windows 端只是编辑器，避免再把 CRLF 版本传到仓库里。
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pgm binary

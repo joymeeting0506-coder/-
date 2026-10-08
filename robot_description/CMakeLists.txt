@@ -14,6 +14,7 @@ install(
 
 install(PROGRAMS
   scripts/frame_remap.py
+  scripts/explore_mapping.py
   scripts/auto_mapping.py
   scripts/wasd_teleop.py
   scripts/reset_robot.py

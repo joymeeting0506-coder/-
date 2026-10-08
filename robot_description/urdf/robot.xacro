@@ -15,11 +15,13 @@
   <xacro:property name="body_height" value="0.10"/>
   <xacro:property name="base_z" value="0.05"/>
 
+  <!-- base_footprint 是 TF 树的根（贴地面），base_link 挂在它上方 base_z 处。
+       顺序不能反：若 base_link 当根，KDL 会因「根节点带惯量」报警。 -->
   <link name="base_footprint"/>
   <joint name="base_footprint_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="base_footprint"/>
-    <origin xyz="0 0 -${base_z}" rpy="0 0 0"/>
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${base_z}" rpy="0 0 0"/>
   </joint>
 
   <link name="base_link">
@@ -52,7 +54,8 @@
         <material name="black"/>
       </visual>
       <collision>
-        <geometry><sphere radius="${wheel_radius}"/></geometry>
+        <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
       </collision>
     </link>
     <joint name="${name}_joint" type="continuous">
@@ -153,6 +156,12 @@
     </plugin>
   </gazebo>
 
+  <!-- gz-sim 8 的 IMU 不由 sensors-system 处理，必须显式加载 imu-system 插件，
+       否则 <sensor type="imu"> 会被静默丢弃、`gz topic -l` 里根本没有 /imu。 -->
+  <gazebo>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+  </gazebo>
+
   <gazebo reference="lidar_link">
     <sensor name="lidar" type="gpu_lidar">
       <lidar>
@@ -173,7 +182,7 @@
         <range><min>0.1</min><max>12.0</max><resolution>0.01</resolution></range>
       </lidar>
       <always_on>1</always_on>
-      <update_rate>10</update_rate>
+      <update_rate>30</update_rate>
       <topic>lidar</topic>
     </sensor>
   </gazebo>

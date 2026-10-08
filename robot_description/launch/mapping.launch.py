@@ -1,7 +1,12 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import (
+    DeclareLaunchArgument,
+    IncludeLaunchDescription,
+    SetEnvironmentVariable,
+)
+from launch.substitutions import LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -16,7 +21,16 @@ def generate_launch_description():
     models = os.path.join(world_pkg, 'models')
     slam_params = os.path.join(robot_pkg, 'config', 'mapper_params_online_async.yaml')
 
-    env = SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models)
+    # VMware SVGA 虚拟 GPU（vmwgfx）只报到 OpenGL 4.3，且离屏 FBO 渲染不稳定：
+    # gpu_lidar 约 2/3 帧全 inf、相机整帧空白。强制走 Mesa llvmpipe 软渲染
+    # （llvmpipe 报 4.5，FBO 路径完整）后渲染才稳定。
+    env = [
+        SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
+        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe'),
+        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5'),
+        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450'),
+    ]
 
     # 无头 gz sim（-s，避免 GUI 渲染卡住）
     gz_sim = IncludeLaunchDescription(
@@ -57,11 +71,19 @@ def generate_launch_description():
         launch_arguments={'slam_params_file': slam_params, 'use_sim_time': 'true'}.items(),
     )
 
-    auto_mapping = Node(
+    # 默认用 explore_mapping.py（低速直线 + 原地转向，漂移明显小于随机避障的 auto_mapping.py）
+    explorer = Node(
         package='robot_description',
-        executable='auto_mapping.py',
-        name='auto_mapping',
+        executable=LaunchConfiguration('explorer'),
+        name='mapping_explorer',
         output='screen',
     )
 
-    return LaunchDescription([env, gz_sim, spawn_robot, bridge, frame_remap, slam, auto_mapping])
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'explorer',
+            default_value='explore_mapping.py',
+            description='自主探索节点：explore_mapping.py（默认）或 auto_mapping.py',
+        ),
+        *env, gz_sim, spawn_robot, bridge, frame_remap, slam, explorer,
+    ])

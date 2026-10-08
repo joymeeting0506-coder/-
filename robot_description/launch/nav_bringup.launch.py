@@ -17,7 +17,16 @@ def generate_launch_description():
     map_file = os.path.join(world_pkg, 'maps', 'community.yaml')
     params = os.path.join(robot_pkg, 'config', 'nav2_params.yaml')
 
-    env = SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models)
+    # VMware SVGA 虚拟 GPU（vmwgfx）只报到 OpenGL 4.3，且离屏 FBO 渲染不稳定：
+    # gpu_lidar 约 2/3 帧全 inf、相机整帧空白。强制走 Mesa llvmpipe 软渲染
+    # （llvmpipe 报 4.5，FBO 路径完整）后渲染才稳定。
+    env = [
+        SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
+        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe'),
+        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5'),
+        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450'),
+    ]
 
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(gz_pkg, 'launch', 'gz_sim.launch.py')),
@@ -62,4 +71,4 @@ def generate_launch_description():
         launch_arguments={'params_file': params, 'use_sim_time': 'true'}.items(),
     )
 
-    return LaunchDescription([env, gz_sim, spawn_robot, bridge, frame_remap, localization, navigation])
+    return LaunchDescription([*env, gz_sim, spawn_robot, bridge, frame_remap, localization, navigation])
