@@ -1,5 +1,7 @@
-__pycache__/
-*.pyc
 build/
 install/
 log/
+__pycache__/
+*.pyc
+.vscode/
+.idea/
