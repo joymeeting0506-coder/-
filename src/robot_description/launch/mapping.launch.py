@@ -6,7 +6,8 @@ from launch.actions import (
     IncludeLaunchDescription,
     SetEnvironmentVariable,
 )
-from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -21,15 +22,18 @@ def generate_launch_description():
     models = os.path.join(world_pkg, 'models')
     slam_params = os.path.join(robot_pkg, 'config', 'mapper_params_online_async.yaml')
 
-    # VMware SVGA 虚拟 GPU（vmwgfx）只报到 OpenGL 4.3，且离屏 FBO 渲染不稳定：
-    # gpu_lidar 约 2/3 帧全 inf、相机整帧空白。强制走 Mesa llvmpipe 软渲染
-    # （llvmpipe 报 4.5，FBO 路径完整）后渲染才稳定。
+    render_mode = LaunchConfiguration('render_mode')
+    software_render = PythonExpression([
+        "'", render_mode, "' in ('software_render', 'sensor_safe')"
+    ])
+
+    # 无头模式默认使用 sensor_safe；需要硬件路径时可传 render_mode:=ogre。
     env = [
         SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models),
-        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
-        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe'),
-        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5'),
-        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450'),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450', condition=IfCondition(software_render)),
     ]
 
     # 无头 gz sim（-s，避免 GUI 渲染卡住）
@@ -80,6 +84,11 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        DeclareLaunchArgument(
+            'render_mode',
+            default_value='sensor_safe',
+            description='sensor_safe/software_render 启用 llvmpipe；ogre 使用硬件渲染路径',
+        ),
         DeclareLaunchArgument(
             'explorer',
             default_value='explore_mapping.py',

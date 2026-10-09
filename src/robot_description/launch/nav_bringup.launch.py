@@ -2,6 +2,9 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -17,15 +20,17 @@ def generate_launch_description():
     map_file = os.path.join(world_pkg, 'maps', 'community.yaml')
     params = os.path.join(robot_pkg, 'config', 'nav2_params.yaml')
 
-    # VMware SVGA 虚拟 GPU（vmwgfx）只报到 OpenGL 4.3，且离屏 FBO 渲染不稳定：
-    # gpu_lidar 约 2/3 帧全 inf、相机整帧空白。强制走 Mesa llvmpipe 软渲染
-    # （llvmpipe 报 4.5，FBO 路径完整）后渲染才稳定。
+    render_mode = LaunchConfiguration('render_mode')
+    software_render = PythonExpression([
+        "'", render_mode, "' in ('software_render', 'sensor_safe')"
+    ])
+
     env = [
         SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models),
-        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
-        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe'),
-        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5'),
-        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450'),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450', condition=IfCondition(software_render)),
     ]
 
     gz_sim = IncludeLaunchDescription(
@@ -71,4 +76,11 @@ def generate_launch_description():
         launch_arguments={'params_file': params, 'use_sim_time': 'true'}.items(),
     )
 
-    return LaunchDescription([*env, gz_sim, spawn_robot, bridge, frame_remap, localization, navigation])
+    return LaunchDescription([
+        DeclareLaunchArgument(
+            'render_mode',
+            default_value='sensor_safe',
+            description='sensor_safe/software_render 启用 llvmpipe；ogre 使用硬件渲染路径',
+        ),
+        *env, gz_sim, spawn_robot, bridge, frame_remap, localization, navigation,
+    ])

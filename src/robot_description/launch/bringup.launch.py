@@ -7,7 +7,7 @@ from launch.actions import (
     SetEnvironmentVariable,
 )
 from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 
@@ -20,24 +20,38 @@ def generate_launch_description():
     world = os.path.join(world_pkg, 'worlds', 'smart_community_v2.sdf')
     models = os.path.join(world_pkg, 'models')
 
-    # VMware SVGA 虚拟 GPU（vmwgfx）只报到 OpenGL 4.3，且离屏 FBO 渲染不稳定：
-    # gpu_lidar 约 2/3 帧全 inf、相机整帧空白。强制走 Mesa llvmpipe 软渲染
-    # （llvmpipe 报 4.5，FBO 路径完整）后渲染才稳定。
-    # 代价是吃 CPU，若宿主卡顿可把这四行注掉换回硬件路径。
+    headless = LaunchConfiguration('headless')
+    render_mode = LaunchConfiguration('render_mode')
+    software_render = PythonExpression([
+        "'", render_mode, "' in ('software_render', 'sensor_safe')"
+    ])
+    gui_software = PythonExpression([
+        "'", headless, "' != 'true' and ", software_render
+    ])
+    gui_hardware = PythonExpression([
+        "'", headless, "' != 'true' and not ", software_render
+    ])
+
+    # GUI 默认使用 VMware 下已验证稳定的 ogre。software_render/sensor_safe
+    # 则启用 llvmpipe，并使用 ogre2 解决 gpu_lidar/camera 的 FBO 问题。
     env = [
         SetEnvironmentVariable('GZ_SIM_RESOURCE_PATH', models),
-        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1'),
-        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe'),
-        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5'),
-        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450'),
+        SetEnvironmentVariable('LIBGL_ALWAYS_SOFTWARE', '1', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('GALLIUM_DRIVER', 'llvmpipe', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('MESA_GL_VERSION_OVERRIDE', '4.5', condition=IfCondition(software_render)),
+        SetEnvironmentVariable('MESA_GLSL_VERSION_OVERRIDE', '450', condition=IfCondition(software_render)),
     ]
-
-    headless = LaunchConfiguration('headless')
 
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(gz_pkg, 'launch', 'gz_sim.launch.py')),
+        launch_arguments={'gz_args': '-r -v2 --render-engine ogre ' + world}.items(),
+        condition=IfCondition(gui_hardware),
+    )
+
+    gz_sim_software = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(gz_pkg, 'launch', 'gz_sim.launch.py')),
         launch_arguments={'gz_args': '-r -v2 --render-engine ogre2 ' + world}.items(),
-        condition=UnlessCondition(headless),
+        condition=IfCondition(gui_software),
     )
 
     # headless:=true 时用 -s（只跑服务端，不开 GUI），传感器照常出数据。
@@ -99,5 +113,11 @@ def generate_launch_description():
             default_value='false',
             description='true 则不开 Gazebo GUI（-s 无头模式），传感器数据照常输出',
         ),
-        *env, gz_sim, gz_sim_headless, spawn_robot, bridge, traffic_light, frame_remap,
+        DeclareLaunchArgument(
+            'render_mode',
+            default_value='ogre',
+            description='ogre（稳定 GUI）、software_render 或 sensor_safe（llvmpipe+ogre2）',
+        ),
+        *env, gz_sim, gz_sim_software, gz_sim_headless,
+        spawn_robot, bridge, traffic_light, frame_remap,
     ])
