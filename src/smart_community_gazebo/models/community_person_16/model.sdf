@@ -3,8 +3,8 @@
   <model name="community_person_16">
     <static>true</static>
     <link name="board">
-      <collision name="collision"><pose>0 0 0.0750 0 0 0</pose><geometry><box><size>0.004 0.038991 0.150000</size></box></geometry></collision>
-      <visual name="person"><geometry><mesh><uri>model://community_person_16/meshes/person.obj</uri></mesh></geometry></visual>
+      <collision name="collision"><pose>0 0 0.075 0 0 0</pose><geometry><box><size>0.005 0.050 0.150</size></box></geometry></collision>
+      <visual name="person"><geometry><mesh><uri>model://community_person_16/meshes/person.obj</uri><scale>1 1.282380097 1</scale></mesh></geometry></visual>
     </link>
   </model>
 </sdf>
