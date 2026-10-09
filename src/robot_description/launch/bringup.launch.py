@@ -62,8 +62,12 @@ def generate_launch_description():
         condition=IfCondition(headless),
     )
 
+    # 世界文件里已经自带 patrol_bot，所以这里只取 spawn_robot.launch.py 里的
+    # robot_state_publisher（spawn:=false），不再重复 spawn——同名模型撞名会让
+    # x/y/yaw 参数静默失效。世界若无车，用 spawn:=true 单独跑 spawn_robot.launch.py。
     spawn_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(robot_pkg, 'launch', 'spawn_robot.launch.py')),
+        launch_arguments={'spawn': 'false'}.items(),
     )
 
     bridge = Node(

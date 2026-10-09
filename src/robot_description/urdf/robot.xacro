@@ -62,7 +62,9 @@
       <parent link="base_link"/>
       <child link="${name}"/>
       <origin xyz="0.04 ${y_pos} 0" rpy="0 0 0"/>
-      <axis xyz="0 -1 0"/>
+      <!-- 轮轴必须指向 +Y：指向 -Y 会让 gz 的 DiffDrive 把 linear.x>0 解释成往 -X 走，
+           小车就会“倒着走”（前进方向与车头相反，相机装在 +X 侧）。 -->
+      <axis xyz="0 1 0"/>
     </joint>
     <gazebo reference="${name}">
       <mu1>1.0</mu1>

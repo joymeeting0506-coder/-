@@ -38,8 +38,10 @@ def generate_launch_description():
         launch_arguments={'gz_args': '-r -s -v2 ' + world}.items(),
     )
 
+    # 世界文件自带 patrol_bot，只取 robot_state_publisher，避免撞名（见 spawn_robot.launch.py）
     spawn_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(robot_pkg, 'launch', 'spawn_robot.launch.py')),
+        launch_arguments={'spawn': 'false'}.items(),
     )
 
     bridge = Node(
