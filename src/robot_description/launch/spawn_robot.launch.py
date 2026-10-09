@@ -30,16 +30,18 @@ def generate_launch_description():
     finally:
         os.unlink(tmp.name)
 
-    spawn_x = LaunchConfiguration('x', default='2.1')
-    spawn_y = LaunchConfiguration('y', default='2.1')
+    # 默认起点 = 起点线（start_finish_zone，场地东北角 3.88, 3.88），车头朝西
+    # 沿顶边道路出发；该处东/北是外墙、南是停车区路沿，只有向西有路。
+    spawn_x = LaunchConfiguration('x', default='3.88')
+    spawn_y = LaunchConfiguration('y', default='3.88')
     spawn_z = LaunchConfiguration('z', default='0.15')
-    spawn_yaw = LaunchConfiguration('yaw', default='1.5708')
+    spawn_yaw = LaunchConfiguration('yaw', default='3.14159')
 
     return LaunchDescription([
-        DeclareLaunchArgument('x', default_value='2.1', description='Spawn X'),
-        DeclareLaunchArgument('y', default_value='2.1', description='Spawn Y'),
+        DeclareLaunchArgument('x', default_value='3.88', description='Spawn X（默认：起点线）'),
+        DeclareLaunchArgument('y', default_value='3.88', description='Spawn Y（默认：起点线）'),
         DeclareLaunchArgument('z', default_value='0.15', description='Spawn Z'),
-        DeclareLaunchArgument('yaw', default_value='1.5708', description='Spawn yaw'),
+        DeclareLaunchArgument('yaw', default_value='3.14159', description='Spawn yaw（默认：朝西 -X）'),
 
         Node(
             package='robot_state_publisher',

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""重置机器人到 spawn 位置 (2.1, 2.1) 朝向 +Y，解决卡墙。"""
+"""重置机器人到 spawn 位置（起点线 3.88, 3.88）朝向 -X，解决卡墙。
+与 spawn_robot.launch.py 的默认值保持一致。"""
 import math
 import sys
 import time
@@ -16,10 +17,10 @@ def main():
 
     req = pose_pb2.Pose()
     req.name = 'patrol_bot'
-    req.position.x = 2.1
-    req.position.y = 2.1
+    req.position.x = 3.88
+    req.position.y = 3.88
     req.position.z = 0.15
-    yaw = math.pi / 2.0
+    yaw = math.pi
     req.orientation.z = math.sin(yaw / 2.0)
     req.orientation.w = math.cos(yaw / 2.0)
 
