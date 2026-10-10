@@ -93,8 +93,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'explorer',
-            default_value='explore_mapping.py',
-            description='自主探索节点：explore_mapping.py（默认）或 auto_mapping.py',
+            default_value='route_mapping.py',
+            description='建图控制节点：route_mapping.py（正式路线，默认）；explore_mapping.py / auto_mapping.py 仅调试',
         ),
         *env, gz_sim, spawn_robot, bridge, frame_remap, slam, explorer,
     ])

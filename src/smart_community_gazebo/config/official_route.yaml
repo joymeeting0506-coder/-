@@ -1,7 +1,7 @@
 frame_id: map
 route:
 - name: START
-  x: 3.86
+  x: 3.884
   y: 3.886
   yaw: 3.141592653589793
   action: depart_left
@@ -81,7 +81,7 @@ route:
   yaw: 0.0
   action: turn_finish
 - name: FINISH
-  x: 3.86
+  x: 3.884
   y: 3.886
   yaw: 0.0
   action: finish

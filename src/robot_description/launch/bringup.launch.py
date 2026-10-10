@@ -62,12 +62,11 @@ def generate_launch_description():
         condition=IfCondition(headless),
     )
 
-    # 世界文件里已经自带 patrol_bot，所以这里只取 spawn_robot.launch.py 里的
-    # robot_state_publisher（spawn:=false），不再重复 spawn——同名模型撞名会让
-    # x/y/yaw 参数静默失效。世界若无车，用 spawn:=true 单独跑 spawn_robot.launch.py。
+    # 当前 smart_community_v2.sdf 不内置 patrol_bot。
+    # 因此 bringup 必须通过 spawn_robot.launch.py 动态创建机器人。
     spawn_robot = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(robot_pkg, 'launch', 'spawn_robot.launch.py')),
-        launch_arguments={'spawn': 'false'}.items(),
+        launch_arguments={'spawn': 'true'}.items(),
     )
 
     bridge = Node(
@@ -80,7 +79,7 @@ def generate_launch_description():
             'camera@sensor_msgs/msg/Image[gz.msgs.Image',
             'camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
             'imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
-            '/world/smart_community/model/patrol_bot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
+            '/world/smart_community_semifinal_v8/model/patrol_bot/joint_state@sensor_msgs/msg/JointState[gz.msgs.Model',
             '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
         ],
         # 不桥接 gz 的 /model/patrol_bot/tf：TF 树由 robot_state_publisher（URDF 静态链）
@@ -92,7 +91,7 @@ def generate_launch_description():
             ('camera', '/camera/image_raw'),
             ('camera_info', '/camera/camera_info'),
             ('imu', '/imu/data'),
-            ('/world/smart_community/model/patrol_bot/joint_state', '/joint_states'),
+            ('/world/smart_community_semifinal_v8/model/patrol_bot/joint_state', '/joint_states'),
         ],
         output='screen',
     )
