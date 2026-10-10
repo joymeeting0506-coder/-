@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<sdf version="1.10"><model name="vehicle_background"><static>true</static><link name="board">
+<collision name="backing_collision"><pose>0 0 0.125 0 0 0</pose><geometry><box><size>0.0005 0.345 0.25</size></box></geometry></collision>
+<visual name="car_face"><pose>-0.00030 0 0 0 0 0</pose><geometry><mesh><uri>model://vehicle_background/meshes/car.obj</uri></mesh></geometry></visual>
+</link></model></sdf>
